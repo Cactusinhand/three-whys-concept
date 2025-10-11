@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import html2canvas from 'html2canvas';
-import { generateConceptAnalysis } from './services/aiService';
+import { generateConceptAnalysisAuto } from './services/aiService';
 import type { Analysis, Provider, ShareableState } from './types';
 import Header from './components/Header';
 import ConceptInput from './components/ConceptInput';
@@ -68,11 +68,6 @@ const App: React.FC = () => {
     }
     if (isLoading) return;
 
-    if (!selectedProvider) {
-      setError(translations[language].errorNoProvider);
-      return;
-    }
-
     setIsLoading(true);
     setError(null);
     setAnalysis(null);
@@ -80,7 +75,7 @@ const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     try {
-      const result = await generateConceptAnalysis(trimmedConcept, selectedProvider);
+      const result = await generateConceptAnalysisAuto(trimmedConcept);
       setAnalysis(result);
       addHistoryItem(trimmedConcept);
     } catch (err) {
@@ -90,7 +85,7 @@ const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [language, selectedProvider, addHistoryItem, isLoading]);
+  }, [language, addHistoryItem, isLoading]);
   
   const handleDownload = async () => {
     if (!analysisRef.current) {
