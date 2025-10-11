@@ -1,4 +1,7 @@
-import React, { createContext, useState, useContext, ReactNode, useMemo } from 'react';
+// FIX: Updated ProviderContext to support dynamic provider selection.
+// This adds `setSelectedProvider` and `availableProviders` to the context
+// to resolve type errors in the `ProviderSelector` component.
+import React, { createContext, useContext, ReactNode, useMemo, useState } from 'react';
 import type { Provider } from '../types';
 
 interface ProviderContextType {
@@ -18,9 +21,14 @@ export const ProviderProvider: React.FC<{ children: ReactNode }> = ({ children }
     return providers;
   }, []);
 
-  const [selectedProvider, setSelectedProvider] = useState<Provider | null>(
-    availableProviders.length > 0 ? availableProviders[0] : null
-  );
+  const initialProvider = useMemo((): Provider | null => {
+    if (process.env.API_KEY) return 'gemini';
+    if (process.env.OPENAI_API_KEY) return 'openai';
+    if (process.env.DEEPSEEK_API_KEY) return 'deepseek';
+    return null;
+  }, []);
+
+  const [selectedProvider, setSelectedProvider] = useState<Provider | null>(initialProvider);
 
   const value = {
     selectedProvider,

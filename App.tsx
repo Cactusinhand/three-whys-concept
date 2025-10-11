@@ -18,6 +18,8 @@ import { useProvider } from './contexts/ProviderContext';
 import { translations } from './locales';
 import { encodeState, decodeState } from './utils/share';
 
+const MAX_CONCEPT_LENGTH = 100;
+
 const App: React.FC = () => {
   const [concept, setConcept] = useState<string>('');
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
@@ -55,22 +57,32 @@ const App: React.FC = () => {
   }, [addHistoryItem]);
 
   const handleAnalysis = useCallback(async (conceptToAnalyze: string) => {
-    if (!conceptToAnalyze.trim()) {
+    const trimmedConcept = conceptToAnalyze.trim();
+    if (!trimmedConcept) {
       setError(translations[language].errorEmptyConcept);
+      return;
+    }
+    if (trimmedConcept.length > MAX_CONCEPT_LENGTH) {
+      setError(translations[language].errorConceptTooLong.replace('{maxLength}', String(MAX_CONCEPT_LENGTH)));
       return;
     }
     if (isLoading) return;
 
+    if (!selectedProvider) {
+      setError(translations[language].errorNoProvider);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     setAnalysis(null);
-    setConcept(conceptToAnalyze);
+    setConcept(trimmedConcept);
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     try {
-      const result = await generateConceptAnalysis(conceptToAnalyze, selectedProvider as Provider);
+      const result = await generateConceptAnalysis(trimmedConcept, selectedProvider);
       setAnalysis(result);
-      addHistoryItem(conceptToAnalyze);
+      addHistoryItem(trimmedConcept);
     } catch (err) {
       console.error(err);
       const message = err instanceof Error ? err.message : translations[language].errorMessage;
@@ -141,7 +153,11 @@ const App: React.FC = () => {
       <div className="w-full max-w-4xl mx-auto flex flex-col items-center flex-grow">
         <Header />
         <main className="w-full mt-8">
-          <ConceptInput onSubmit={handleAnalysis} isLoading={isLoading} />
+          <ConceptInput 
+            onSubmit={handleAnalysis} 
+            isLoading={isLoading} 
+            maxLength={MAX_CONCEPT_LENGTH}
+          />
           <ExampleConcepts onSelect={handleAnalysis} isLoading={isLoading} />
 
           <History
