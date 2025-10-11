@@ -6,6 +6,8 @@ import Header from './components/Header';
 import ConceptInput from './components/ConceptInput';
 import AnalysisDisplay from './components/AnalysisDisplay';
 import Loader from './components/Loader';
+import EnhancedLoader from './components/EnhancedLoader';
+import ErrorDisplay from './components/ErrorDisplay';
 import Footer from './components/Footer';
 import ExampleConcepts from './components/ExampleConcepts';
 import History from './components/History';
@@ -17,6 +19,7 @@ import { useLanguage } from './contexts/LanguageContext';
 import { useProvider } from './contexts/ProviderContext';
 import { translations } from './locales';
 import { encodeState, decodeState } from './utils/share';
+import { createErrorInfo, validateConcept, getValidationErrorMessage } from './utils/errorHandling';
 
 const MAX_CONCEPT_LENGTH = 100;
 
@@ -25,11 +28,14 @@ const App: React.FC = () => {
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isDownloading, setIsDownloading] = useState<boolean>(false);
+  const [loadingStage, setLoadingStage] = useState<'initializing' | 'connecting' | 'analyzing' | 'generating'>('analyzing');
   const [error, setError] = useState<string | null>(null);
+  const [errorInfo, setErrorInfo] = useState<ReturnType<typeof createErrorInfo> | null>(null);
   const { language } = useLanguage();
   const { selectedProvider } = useProvider();
   const { history, addHistoryItem } = useHistory();
   const analysisRef = useRef<HTMLDivElement>(null);
+  const analysisAbortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -44,11 +50,15 @@ const App: React.FC = () => {
           setAnalysis(decodedState.analysis);
           addHistoryItem(decodedState.concept);
         } else {
-          setError("Could not read the shared link. The data may be corrupted.");
+          const errorInfo = createErrorInfo(new Error('Could not read the shared link. The data may be corrupted.'), 'share_link');
+          setErrorInfo(errorInfo);
+          setError(errorInfo.userFriendly);
         }
       } catch (err) {
         console.error("Failed to process shared link:", err);
-        setError("Failed to load data from the shared link.");
+        const errorInfo = createErrorInfo(err instanceof Error ? err : new Error('Failed to load data from the shared link.'), 'share_link');
+        setErrorInfo(errorInfo);
+        setError(errorInfo.userFriendly);
       } finally {
         setIsLoading(false);
         window.history.replaceState({}, document.title, window.location.pathname);
@@ -56,40 +66,112 @@ const App: React.FC = () => {
     }
   }, [addHistoryItem]);
 
-  const handleAnalysis = useCallback(async (conceptToAnalyze: string) => {
+  // Cleanup abort controller on unmount
+  useEffect(() => {
+    return () => {
+      if (analysisAbortControllerRef.current) {
+        analysisAbortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
+  const handleAnalysis = useCallback(async (conceptToAnalyze: string, isRetry: boolean = false) => {
     const trimmedConcept = conceptToAnalyze.trim();
-    if (!trimmedConcept) {
-      setError(translations[language].errorEmptyConcept);
+
+    // Enhanced validation
+    const validation = validateConcept(trimmedConcept);
+    if (!validation.isValid) {
+      const errorMessage = getValidationErrorMessage(validation.error!, language);
+      const errorInfo = createErrorInfo(new Error(errorMessage), 'validation');
+      setErrorInfo(errorInfo);
+      setError(errorMessage);
       return;
     }
-    if (trimmedConcept.length > MAX_CONCEPT_LENGTH) {
-      setError(translations[language].errorConceptTooLong.replace('{maxLength}', String(MAX_CONCEPT_LENGTH)));
-      return;
+
+    if (isLoading && !isRetry) return;
+
+    // Cancel any ongoing analysis
+    if (analysisAbortControllerRef.current) {
+      analysisAbortControllerRef.current.abort();
     }
-    if (isLoading) return;
+
+    // Create new abort controller for this request
+    analysisAbortControllerRef.current = new AbortController();
 
     setIsLoading(true);
     setError(null);
+    setErrorInfo(null);
     setAnalysis(null);
-    setConcept(trimmedConcept);
+    if (!isRetry) {
+      setConcept(trimmedConcept);
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
+    // Update loading stages with better timing - reduce connecting time
+    setLoadingStage('initializing');
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    setLoadingStage('connecting');
+    await new Promise(resolve => setTimeout(resolve, 400)); // Reduced from 800ms to 400ms
+
+    setLoadingStage('analyzing');
+
+    // Start API call immediately when entering analyzing stage
+    const analysisPromise = generateConceptAnalysisAuto(trimmedConcept);
+
     try {
-      const result = await generateConceptAnalysisAuto(trimmedConcept);
+      const result = await analysisPromise;
+
+      // Check if request was aborted
+      if (analysisAbortControllerRef.current?.signal.aborted) {
+        return;
+      }
+
+      setLoadingStage('generating');
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       setAnalysis(result);
       addHistoryItem(trimmedConcept);
+      setErrorInfo(null);
     } catch (err) {
+      // Check if request was aborted
+      if (analysisAbortControllerRef.current?.signal.aborted) {
+        return;
+      }
+
       console.error(err);
-      const message = err instanceof Error ? err.message : translations[language].errorMessage;
-      setError(message);
+      const errorInfo = createErrorInfo(err instanceof Error ? err : new Error('Analysis failed'), 'ai_service');
+      setErrorInfo(errorInfo);
+      setError(errorInfo.userFriendly);
     } finally {
-      setIsLoading(false);
+      if (!analysisAbortControllerRef.current?.signal.aborted) {
+        setIsLoading(false);
+        setLoadingStage('analyzing');
+      }
     }
   }, [language, addHistoryItem, isLoading]);
-  
+
+  const handleRetry = useCallback(() => {
+    if (concept) {
+      handleAnalysis(concept, true);
+    }
+  }, [concept, handleAnalysis]);
+
+  const handleCancel = useCallback(() => {
+    if (analysisAbortControllerRef.current) {
+      analysisAbortControllerRef.current.abort();
+      analysisAbortControllerRef.current = null;
+    }
+    setIsLoading(false);
+    setLoadingStage('analyzing');
+  }, []);
+
   const handleDownload = async () => {
     if (!analysisRef.current) {
       console.error("Analysis element not found");
+      const errorInfo = createErrorInfo(new Error('Analysis element not found'), 'download');
+      setErrorInfo(errorInfo);
+      setError(errorInfo.userFriendly);
       return;
     }
 
@@ -102,7 +184,7 @@ const App: React.FC = () => {
         useCORS: true,
         scale: 2,
       });
-      
+
       const image = canvas.toDataURL('image/png');
       const link = document.createElement('a');
       link.href = image;
@@ -112,7 +194,9 @@ const App: React.FC = () => {
       document.body.removeChild(link);
     } catch (err) {
       console.error("Failed to download image", err);
-      setError("Failed to generate the image for download.");
+      const errorInfo = createErrorInfo(err instanceof Error ? err : new Error('Failed to generate download image'), 'download');
+      setErrorInfo(errorInfo);
+      setError(errorInfo.userFriendly);
     } finally {
       document.body.classList.remove('is-capturing');
       setIsDownloading(false);
@@ -136,10 +220,14 @@ const App: React.FC = () => {
         // The button's internal state will show "Copied!"
       } catch (err) {
         console.error("Failed to copy link to clipboard", err);
-        setError("Could not copy link to clipboard.");
+        const errorInfo = createErrorInfo(err instanceof Error ? err : new Error('Could not copy link to clipboard'), 'share_link');
+        setErrorInfo(errorInfo);
+        setError(errorInfo.userFriendly);
       }
     } else {
-      setError("Failed to generate a shareable link.");
+      const errorInfo = createErrorInfo(new Error('Failed to generate a shareable link'), 'share_link');
+      setErrorInfo(errorInfo);
+      setError(errorInfo.userFriendly);
     }
   };
 
@@ -175,18 +263,24 @@ const App: React.FC = () => {
           </div>
 
           {isLoading && (
-            <div className="mt-12 flex flex-col items-center justify-center">
-              <Loader />
-              <p className="mt-4 text-slate-400">
-                {translations[language].loadingMessage.replace('{concept}', concept)}
-              </p>
+            <div className="mt-12">
+              <EnhancedLoader
+                concept={concept}
+                stage={loadingStage}
+                showProgress={true}
+                onCancel={handleCancel}
+              />
             </div>
           )}
 
           {error && (
-            <div className="mt-12 text-center bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded-lg animate-fade-in">
-              <p className="font-bold">{translations[language].errorTitle}</p>
-              <p>{error}</p>
+            <div className="mt-12">
+              <ErrorDisplay
+                error={error}
+                onRetry={errorInfo?.retryable ? handleRetry : undefined}
+                showRetry={!!errorInfo?.retryable}
+                type={errorInfo?.type === 'network' || errorInfo?.type === 'timeout' ? 'warning' : 'error'}
+              />
             </div>
           )}
 

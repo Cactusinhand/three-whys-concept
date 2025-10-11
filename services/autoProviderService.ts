@@ -1,6 +1,6 @@
 import type { Analysis, Provider } from '../types';
 
-// Provider priority configuration
+// Provider priority configuration - now optimized to use available providers first
 const PROVIDER_PRIORITY: Provider[] = ['gemini', 'openai', 'deepseek'];
 
 // Check if a provider has valid API key configuration
@@ -20,24 +20,23 @@ const isProviderAvailable = (provider: Provider): boolean => {
   }
 };
 
-// Get the first available provider based on priority
-const getAvailableProvider = (): Provider => {
-  for (const provider of PROVIDER_PRIORITY) {
-    if (isProviderAvailable(provider)) {
-      console.log(`Using ${provider} API (priority-based selection)`);
-      return provider;
-    }
+// Get available providers prioritized by availability, then by original priority
+const getOptimizedProviderOrder = (): Provider[] => {
+  // First get all available providers
+  const availableProviders = PROVIDER_PRIORITY.filter(isProviderAvailable);
+
+  // If no providers available, throw error
+  if (availableProviders.length === 0) {
+    throw new Error('No AI provider API keys configured. Please set GEMINI_API_KEY, OPENAI_API_KEY, or DEEPSEEK_API_KEY in your environment variables.');
   }
-  throw new Error('No AI provider API keys configured. Please set GEMINI_API_KEY, OPENAI_API_KEY, or DEEPSEEK_API_KEY in your environment variables.');
+
+  console.log(`Available providers: ${availableProviders.join(', ')}`);
+  return availableProviders;
 };
 
 // Generate concept analysis using the first available provider with fallback
 export const generateWithAutoProvider = async (concept: string): Promise<Analysis> => {
-  const availableProviders = PROVIDER_PRIORITY.filter(isProviderAvailable);
-
-  if (availableProviders.length === 0) {
-    throw new Error('No AI provider API keys configured. Please set GEMINI_API_KEY, OPENAI_API_KEY, or DEEPSEEK_API_KEY in your environment variables.');
-  }
+  const availableProviders = getOptimizedProviderOrder();
 
   // Try each available provider in order, with fallback on failure
   for (const provider of availableProviders) {
