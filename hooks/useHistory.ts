@@ -25,13 +25,15 @@ export const useHistory = () => {
       const filteredHistory = prevHistory.filter(item => item.toLowerCase() !== lowerCaseConcept);
       // Add the new one to the top.
       const newHistory = [concept, ...filteredHistory];
-      
+      // Limit to maximum 5 items
+      const limitedHistory = newHistory.slice(0, 5);
+
       try {
-        localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(newHistory));
+        localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(limitedHistory));
       } catch (error) {
         console.error("Failed to save history to localStorage", error);
       }
-      return newHistory;
+      return limitedHistory;
     });
   }, []);
 

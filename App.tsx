@@ -1,25 +1,28 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import html2canvas from 'html2canvas';
+import React, { useState, useCallback, useRef, useEffect, lazy, Suspense } from 'react';
 import { generateConceptAnalysisAuto } from './services/aiService';
 import type { Analysis, Provider, ShareableState } from './types';
 import Header from './components/Header';
 import ConceptInput from './components/ConceptInput';
-import AnalysisDisplay from './components/AnalysisDisplay';
-import Loader from './components/Loader';
 import EnhancedLoader from './components/EnhancedLoader';
-import ErrorDisplay from './components/ErrorDisplay';
-import Footer from './components/Footer';
-import ExampleConcepts from './components/ExampleConcepts';
-import History from './components/History';
-import DownloadButton from './components/DownloadButton';
 import LanguageSwitcher from './components/LanguageSwitcher';
-import ShareButton from './components/ShareButton';
 import { useHistory } from './hooks/useHistory';
 import { useLanguage } from './contexts/LanguageContext';
 import { useProvider } from './contexts/ProviderContext';
 import { translations } from './locales';
 import { encodeState, decodeState } from './utils/share';
 import { createErrorInfo, validateConcept, getValidationErrorMessage } from './utils/errorHandling';
+
+// Lazy load non-critical components to reduce initial bundle size and dependency chain
+const AnalysisDisplay = lazy(() => import('./components/AnalysisDisplay'));
+const ErrorDisplay = lazy(() => import('./components/ErrorDisplay'));
+const Footer = lazy(() => import('./components/Footer'));
+const ExampleConcepts = lazy(() => import('./components/ExampleConcepts'));
+const History = lazy(() => import('./components/History'));
+const DownloadButton = lazy(() => import('./components/DownloadButton'));
+const ShareButton = lazy(() => import('./components/ShareButton'));
+
+// Dynamic import for heavy dependencies
+const loadHtml2Canvas = () => import('html2canvas');
 
 const MAX_CONCEPT_LENGTH = 100;
 
@@ -107,13 +110,9 @@ const App: React.FC = () => {
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // Update loading stages with better timing - reduce connecting time
+    // Update loading stages - NO delays, just immediate API calls!
     setLoadingStage('initializing');
-    await new Promise(resolve => setTimeout(resolve, 300));
-
     setLoadingStage('connecting');
-    await new Promise(resolve => setTimeout(resolve, 400)); // Reduced from 800ms to 400ms
-
     setLoadingStage('analyzing');
 
     // Start API call immediately when entering analyzing stage
@@ -179,6 +178,8 @@ const App: React.FC = () => {
     document.body.classList.add('is-capturing');
 
     try {
+      // Dynamic import html2canvas only when needed
+      const { default: html2canvas } = await loadHtml2Canvas();
       const canvas = await html2canvas(analysisRef.current, {
         backgroundColor: '#0f172a', // bg-slate-900
         useCORS: true,
@@ -241,25 +242,49 @@ const App: React.FC = () => {
             isLoading={isLoading} 
             maxLength={MAX_CONCEPT_LENGTH}
           />
-          <ExampleConcepts onSelect={handleAnalysis} isLoading={isLoading} />
+          <Suspense fallback={
+            <div className="w-full max-w-2xl mx-auto mt-8 p-4 bg-slate-800 rounded-lg text-center text-slate-400">
+              Loading examples...
+            </div>
+          }>
+            <ExampleConcepts onSelect={handleAnalysis} isLoading={isLoading} />
+          </Suspense>
 
-          <History
-            history={history}
-            onSelect={handleAnalysis}
-            isLoading={isLoading}
-          />
-          
+          <Suspense fallback={
+            <div className="w-full max-w-2xl mx-auto mt-6 p-4 bg-slate-800 rounded-lg text-center text-slate-400">
+              Loading history...
+            </div>
+          }>
+            <History
+              history={history}
+              onSelect={handleAnalysis}
+              isLoading={isLoading}
+            />
+          </Suspense>
+
           <div className="w-full max-w-2xl mx-auto flex flex-wrap justify-center items-center gap-4 mt-8 animate-fade-in" style={{ animationDelay: '0.5s' }}>
             <LanguageSwitcher />
-            <DownloadButton
-              onClick={handleDownload}
-              isLoading={isDownloading}
-              isDisabled={!analysis || isLoading}
-            />
-            <ShareButton
-              onClick={handleShare}
-              isDisabled={!analysis || isLoading}
-            />
+            <Suspense fallback={
+              <button className="px-4 py-2 bg-slate-700 text-white rounded-md" disabled>
+                Loading...
+              </button>
+            }>
+              <DownloadButton
+                onClick={handleDownload}
+                isLoading={isDownloading}
+                isDisabled={!analysis || isLoading}
+              />
+            </Suspense>
+            <Suspense fallback={
+              <button className="px-4 py-2 bg-slate-700 text-white rounded-md" disabled>
+                Loading...
+              </button>
+            }>
+              <ShareButton
+                onClick={handleShare}
+                isDisabled={!analysis || isLoading}
+              />
+            </Suspense>
           </div>
 
           {isLoading && (
@@ -275,12 +300,18 @@ const App: React.FC = () => {
 
           {error && (
             <div className="mt-12">
-              <ErrorDisplay
-                error={error}
-                onRetry={errorInfo?.retryable ? handleRetry : undefined}
-                showRetry={!!errorInfo?.retryable}
-                type={errorInfo?.type === 'network' || errorInfo?.type === 'timeout' ? 'warning' : 'error'}
-              />
+              <Suspense fallback={
+                <div className="p-4 bg-red-900/50 border border-red-700 rounded-lg text-center text-red-300">
+                  Loading error display...
+                </div>
+              }>
+                <ErrorDisplay
+                  error={error}
+                  onRetry={errorInfo?.retryable ? handleRetry : undefined}
+                  showRetry={!!errorInfo?.retryable}
+                  type={errorInfo?.type === 'network' || errorInfo?.type === 'timeout' ? 'warning' : 'error'}
+                />
+              </Suspense>
             </div>
           )}
 
@@ -291,13 +322,25 @@ const App: React.FC = () => {
                   {translations[language].analysisOf}{' '}
                   <span className="text-white">{concept}</span>
                 </h2>
-                <AnalysisDisplay analysis={analysis} />
+                <Suspense fallback={
+                  <div className="p-8 bg-slate-800 rounded-lg text-center text-slate-400">
+                    <div className="animate-pulse">Loading analysis...</div>
+                  </div>
+                }>
+                  <AnalysisDisplay analysis={analysis} />
+                </Suspense>
               </div>
             </div>
           )}
         </main>
       </div>
-      <Footer />
+      <Suspense fallback={
+        <div className="w-full text-center p-4 bg-slate-800 text-slate-400">
+          Loading footer...
+        </div>
+      }>
+        <Footer />
+      </Suspense>
     </div>
   );
 };

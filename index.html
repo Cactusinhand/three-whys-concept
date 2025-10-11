@@ -4,8 +4,44 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Concept Three-Whys</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Concept Three-Whys - AI-Powered Concept Analysis</title>
+    <meta name="description" content="Deep understanding of any concept through AI-powered Why-How-What analysis. Supporting multiple AI providers with bilingual English/Chinese output." />
+    <meta name="keywords" content="concept analysis, AI, why how what, understanding framework, bilingual, Gemini, OpenAI, DeepSeek" />
+    <meta name="author" content="Concept Three-Whys" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Concept Three-Whys - AI-Powered Concept Analysis" />
+    <meta property="og:description" content="Deep understanding of any concept through AI-powered Why-How-What analysis. Supporting multiple AI providers with bilingual output." />
+    <meta property="og:url" content="https://three-whys-concept.pages.dev/" />
+    <meta property="og:site_name" content="Concept Three-Whys" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:title" content="Concept Three-Whys - AI-Powered Concept Analysis" />
+    <meta property="twitter:description" content="Deep understanding of any concept through AI-powered Why-How-What analysis." />
+
+    <!-- Optimized Tailwind CSS loading with preconnect -->
+    <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin />
+
+    <!-- Simple fallback styles without animations to prevent CLS -->
+    <style>
+      body {
+        background-color: rgb(15 23 42);
+        color: rgb(226 232 240);
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+
+      body.is-capturing * {
+        transition: none !important;
+        animation: none !important;
+      }
+    </style>
+
+    <!-- Load Tailwind synchronously with config -->
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
     <script>
       tailwind.config = {
         theme: {
@@ -26,14 +62,8 @@
             }
           }
         }
-      }
+      };
     </script>
-    <style>
-      body.is-capturing * {
-        transition: none !important;
-        animation: none !important;
-      }
-    </style>
   <script type="importmap">
 {
   "imports": {
@@ -47,9 +77,61 @@
   }
 }
 </script>
+
+    <!-- Structured Data for SEO -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Concept Three-Whys",
+      "description": "AI-powered concept analysis tool using the Why-How-What framework for deep understanding",
+      "url": "https://three-whys-concept.pages.dev/",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "Any",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "featureList": [
+        "AI-powered concept analysis",
+        "Multiple AI provider support (Gemini, OpenAI, DeepSeek)",
+        "Bilingual English/Chinese output",
+        "Shareable analysis results",
+        "Downloadable analysis cards"
+      ]
+    }
+    </script>
 </head>
+
   <body class="bg-slate-900 text-slate-200">
+    <!-- Fallback for users without JavaScript -->
+    <noscript>
+      <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: 2rem;">
+        <h1 style="font-size: 2.5rem; font-weight: bold; margin-bottom: 1rem; background: linear-gradient(135deg, #06b6d4, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Concept Three-Whys</h1>
+        <p style="max-width: 600px; margin: 1rem auto;">
+          AI-powered concept analysis using the Why-How-What framework.
+          Please enable JavaScript to use this application.
+        </p>
+      </div>
+    </noscript>
+
+    <!-- Main React app -->
     <div id="root"></div>
+
+    <!-- Load React app -->
     <script type="module" src="/index.tsx"></script>
+
+    <!-- Simple performance monitoring -->
+    <script>
+      // Performance metrics
+      if ('performance' in window && 'measure' in performance) {
+        window.addEventListener('load', function() {
+          const navigation = performance.getEntriesByType('navigation')[0];
+          const loadTime = navigation.loadEventEnd - navigation.fetchStart;
+          console.log('Page load time:', loadTime + 'ms');
+        });
+      }
+    </script>
   </body>
 </html>

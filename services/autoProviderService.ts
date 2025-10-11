@@ -7,13 +7,13 @@ const PROVIDER_PRIORITY: Provider[] = ['gemini', 'openai', 'deepseek'];
 const isProviderAvailable = (provider: Provider): boolean => {
   switch (provider) {
     case 'gemini':
-      const geminiKey = process.env.GEMINI_API_KEY;
+      const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;
       return !!geminiKey && geminiKey.trim() !== '' && geminiKey !== 'undefined';
     case 'openai':
-      const openaiKey = process.env.OPENAI_API_KEY;
+      const openaiKey = import.meta.env.VITE_OPENAI_API_KEY;
       return !!openaiKey && openaiKey.trim() !== '' && openaiKey !== 'undefined';
     case 'deepseek':
-      const deepseekKey = process.env.DEEPSEEK_API_KEY;
+      const deepseekKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
       return !!deepseekKey && deepseekKey.trim() !== '' && deepseekKey !== 'undefined';
     default:
       return false;
@@ -27,10 +27,12 @@ const getOptimizedProviderOrder = (): Provider[] => {
 
   // If no providers available, throw error
   if (availableProviders.length === 0) {
-    throw new Error('No AI provider API keys configured. Please set GEMINI_API_KEY, OPENAI_API_KEY, or DEEPSEEK_API_KEY in your environment variables.');
+    throw new Error('No AI provider API keys configured. Please set VITE_GEMINI_API_KEY, VITE_OPENAI_API_KEY, or VITE_DEEPSEEK_API_KEY in your environment variables.');
   }
 
-  console.log(`Available providers: ${availableProviders.join(', ')}`);
+  // Since we typically configure only one provider in .env.local, return it directly
+  // This eliminates unnecessary fallback logic when we already know which provider to use
+  console.log(`Using configured provider: ${availableProviders[0]}`);
   return availableProviders;
 };
 
