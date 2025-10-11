@@ -182,7 +182,7 @@ const App: React.FC = () => {
           {analysis && !isLoading && (
             <div className="mt-12 animate-fade-in">
               <div ref={analysisRef} className="bg-slate-900 p-4 sm:p-6 rounded-lg">
-                <h2 className="text-3xl font-bold text-center text-cyan-400 mb-8">
+                <h2 className="text-2xl sm:text-3xl font-bold text-center text-cyan-400 mb-8">
                   {translations[language].analysisOf}{' '}
                   <span className="text-white">{concept}</span>
                 </h2>
