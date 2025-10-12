@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+
+  <!-- Main page - English version -->
+  <url>
+    <loc>https://concept.githubcard.com/</loc>
+    <lastmod>2024-12-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://concept.githubcard.com/?lang=en" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://concept.githubcard.com/?lang=zh" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://concept.githubcard.com/" />
+  </url>
+
+  <!-- English version -->
+  <url>
+    <loc>https://concept.githubcard.com/?lang=en</loc>
+    <lastmod>2024-12-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://concept.githubcard.com/?lang=zh" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://concept.githubcard.com/" />
+  </url>
+
+  <!-- Chinese version -->
+  <url>
+    <loc>https://concept.githubcard.com/?lang=zh</loc>
+    <lastmod>2024-12-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://concept.githubcard.com/?lang=en" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://concept.githubcard.com/" />
+  </url>
+
+  <!-- Shared example pages (for potential future use) -->
+  <url>
+    <loc>https://concept.githubcard.com/shared/example</loc>
+    <lastmod>2024-12-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Main app entry point with images -->
+  <url>
+    <loc>https://concept.githubcard.com/</loc>
+    <lastmod>2024-12-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://concept.githubcard.com/og-image.jpg</image:loc>
+      <image:title>Concept Three-Whys - AI-Powered Concept Analysis Tool</image:title>
+      <image:caption>AI-powered tool for deep concept understanding using the Why-How-What framework</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://concept.githubcard.com/twitter-image.jpg</image:loc>
+      <image:title>Concept Three-Whys Twitter Card</image:title>
+      <image:caption>Free educational tool for concept analysis with bilingual support</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://concept.githubcard.com/screenshot.jpg</image:loc>
+      <image:title>Concept Three-Whys Application Screenshot</image:title>
+      <image:caption>Main interface of the Concept Three-Whys analysis tool</image:caption>
+    </image:image>
+  </url>
+
+</urlset>

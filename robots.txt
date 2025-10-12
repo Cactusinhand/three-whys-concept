@@ -1,0 +1,61 @@
+# Concept Three-Whys - Robots.txt
+# https://concept.githubcard.com/
+
+User-agent: *
+Allow: /
+Allow: /components/
+Allow: /contexts/
+Allow: /services/
+Allow: /hooks/
+Allow: /utils/
+Allow: /locales/
+Allow: /types.ts
+Allow: /index.tsx
+Allow: /App.tsx
+Allow: /index.html
+Allow: /site.webmanifest
+Allow: /favicon.svg
+Allow: /favicon.ico
+Allow: /apple-touch-icon.png
+Allow: /favicon-96x96.png
+Allow: /og-image.jpg
+Allow: /twitter-image.jpg
+Allow: /screenshot.jpg
+
+# Disallow sensitive files and build artifacts
+Disallow: /node_modules/
+Disallow: /.env*
+Disallow: /dist/
+Disallow: /build/
+Disallow: /coverage/
+Disallow: /test-results/
+Disallow: /reports/
+Disallow: /.git/
+Disallow: /.DS_Store
+Disallow: /*.log
+Disallow: /tmp/
+
+# Allow all major search engines
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: Baiduspider
+Allow: /
+
+# Crawl delay for responsible crawling
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://concept.githubcard.com/sitemap.xml
+
+# Host specification for some crawlers
+Host: https://concept.githubcard.com/
