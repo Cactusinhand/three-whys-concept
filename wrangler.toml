@@ -1,0 +1,20 @@
+# Cloudflare Pages configuration for local development
+name = "concept-three-whys"
+compatibility_date = "2025-10-11"
+compatibility_flags = ["nodejs_compat"]
+
+# Optimized configuration for better performance
+[build]
+command = "npm run build"
+
+[env.production]
+# Production environment variables will be set in Cloudflare Dashboard
+
+# Performance optimizations
+[[env.production.vars]]
+# Add any production-specific variables here
+
+# Configure for faster cold starts
+[env.development]
+# Development configuration
+

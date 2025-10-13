@@ -20,15 +20,15 @@ export const EnhancedLoader: React.FC<EnhancedLoaderProps> = ({
   const getStageText = () => {
     switch (stage) {
       case 'initializing':
-        return language === 'zh' ? '正在初始化...' : 'Initializing...';
+        return language === 'zh' ? '正在准备分析请求...' : 'Preparing analysis request...';
       case 'connecting':
-        return language === 'zh' ? '正在连接AI服务...' : 'Connecting to AI service...';
+        return language === 'zh' ? '正在连接 DeepSeek AI...' : 'Connecting to DeepSeek AI...';
       case 'analyzing':
         return concept ?
-          translations[language].loadingMessage.replace('{concept}', concept) :
-          language === 'zh' ? '正在分析概念...' : 'Analyzing concept...';
+          (language === 'zh' ? `正在使用 AI 分析 "${concept}"...` : `Using AI to analyze "${concept}"...`) :
+          (language === 'zh' ? '正在使用 AI 分析概念...' : 'Using AI to analyze concept...');
       case 'generating':
-        return language === 'zh' ? '正在生成分析结果...' : 'Generating analysis...';
+        return language === 'zh' ? '正在整理分析结果...' : 'Organizing analysis results...';
       default:
         return language === 'zh' ? '处理中...' : 'Processing...';
     }

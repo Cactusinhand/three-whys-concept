@@ -1,13 +1,12 @@
 import React, { useState, useCallback, useRef, useEffect, lazy, Suspense } from 'react';
-import { generateConceptAnalysisAuto } from './services/aiService';
-import type { Analysis, Provider, ShareableState } from './types';
+import { generateConceptAnalysis } from './services/secureAiService';
+import type { Analysis, ShareableState } from './types';
 import Header from './components/Header';
 import ConceptInput from './components/ConceptInput';
 import EnhancedLoader from './components/EnhancedLoader';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import { useHistory } from './hooks/useHistory';
 import { useLanguage } from './contexts/LanguageContext';
-import { useProvider } from './contexts/ProviderContext';
 import { translations } from './locales';
 import { encodeState, decodeState } from './utils/share';
 import { createErrorInfo, validateConcept, getValidationErrorMessage } from './utils/errorHandling';
@@ -35,10 +34,45 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [errorInfo, setErrorInfo] = useState<ReturnType<typeof createErrorInfo> | null>(null);
   const { language } = useLanguage();
-  const { selectedProvider } = useProvider();
   const { history, addHistoryItem } = useHistory();
   const analysisRef = useRef<HTMLDivElement>(null);
   const analysisAbortControllerRef = useRef<AbortController | null>(null);
+
+  // Normalize any non-bilingual responses into the expected bilingual shape
+  const normalizeToBilingualAnalysis = useCallback((data: any): Analysis => {
+    const toBilingual = (val: any) => {
+      if (val && typeof val === 'object' && 'en' in val && 'zh' in val) return val as any;
+      const s = typeof val === 'string' ? val : '';
+      return { en: s, zh: s };
+    };
+
+    // Defensive mapping for legacy single-language payloads
+    return {
+      why: {
+        title: toBilingual(data?.why?.title),
+        content: toBilingual(data?.why?.content),
+      },
+      how: {
+        title: toBilingual(data?.how?.title),
+        content: toBilingual(data?.how?.content),
+      },
+      what: {
+        title: toBilingual(data?.what?.title),
+        coreComponents: {
+          title: toBilingual(data?.what?.coreComponents?.title),
+          content: toBilingual(data?.what?.coreComponents?.content),
+        },
+        operatingMechanism: {
+          title: toBilingual(data?.what?.operatingMechanism?.title),
+          content: toBilingual(data?.what?.operatingMechanism?.content),
+        },
+        applicationBoundaries: {
+          title: toBilingual(data?.what?.applicationBoundaries?.title),
+          content: toBilingual(data?.what?.applicationBoundaries?.content),
+        },
+      },
+    };
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -50,7 +84,7 @@ const App: React.FC = () => {
         const decodedState = decodeState(data);
         if (decodedState) {
           setConcept(decodedState.concept);
-          setAnalysis(decodedState.analysis);
+          setAnalysis(normalizeToBilingualAnalysis(decodedState.analysis));
           addHistoryItem(decodedState.concept);
         } else {
           const errorInfo = createErrorInfo(new Error('Could not read the shared link. The data may be corrupted.'), 'share_link');
@@ -91,7 +125,11 @@ const App: React.FC = () => {
       return;
     }
 
-    if (isLoading && !isRetry) return;
+    // Prevent duplicate calls - check if already loading with same concept
+    if (isLoading && concept === trimmedConcept && !isRetry) {
+      console.log('Already analyzing this concept, skipping duplicate call');
+      return;
+    }
 
     // Cancel any ongoing analysis
     if (analysisAbortControllerRef.current) {
@@ -110,13 +148,15 @@ const App: React.FC = () => {
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // Update loading stages - NO delays, just immediate API calls!
+    // Update loading stages - optimized for better UX
     setLoadingStage('initializing');
+
     setLoadingStage('connecting');
+
     setLoadingStage('analyzing');
 
     // Start API call immediately when entering analyzing stage
-    const analysisPromise = generateConceptAnalysisAuto(trimmedConcept);
+    const analysisPromise = generateConceptAnalysis(trimmedConcept);
 
     try {
       const result = await analysisPromise;
@@ -129,7 +169,7 @@ const App: React.FC = () => {
       setLoadingStage('generating');
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      setAnalysis(result);
+      setAnalysis(normalizeToBilingualAnalysis(result));
       addHistoryItem(trimmedConcept);
       setErrorInfo(null);
     } catch (err) {

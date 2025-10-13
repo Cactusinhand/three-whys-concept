@@ -15,16 +15,20 @@ const ProviderContext = createContext<ProviderContextType | undefined>(undefined
 export const ProviderProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const availableProviders = useMemo((): Provider[] => {
     const providers: Provider[] = [];
-    if (process.env.API_KEY) providers.push('gemini');
-    if (process.env.OPENAI_API_KEY) providers.push('openai');
-    if (process.env.DEEPSEEK_API_KEY) providers.push('deepseek');
+    if (import.meta.env.VITE_GEMINI_API_KEY) providers.push('gemini');
+    if (import.meta.env.VITE_OPENAI_API_KEY) providers.push('openai');
+    if (import.meta.env.VITE_DEEPSEEK_API_KEY) providers.push('deepseek');
     return providers;
   }, []);
 
   const initialProvider = useMemo((): Provider | null => {
-    if (process.env.API_KEY) return 'gemini';
-    if (process.env.OPENAI_API_KEY) return 'openai';
-    if (process.env.DEEPSEEK_API_KEY) return 'deepseek';
+    // For production, always use DeepSeek regardless of other API keys
+    // This prevents trying multiple providers and causing performance issues
+    if (import.meta.env.VITE_DEEPSEEK_API_KEY) return 'deepseek';
+
+    // Fallback to other providers only if DeepSeek is not available
+    if (import.meta.env.VITE_GEMINI_API_KEY) return 'gemini';
+    if (import.meta.env.VITE_OPENAI_API_KEY) return 'openai';
     return null;
   }, []);
 
