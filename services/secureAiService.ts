@@ -3,7 +3,7 @@ import type { Analysis } from '../types';
 // Secure AI service that calls our backend API instead of directly exposing API keys
 class SecureAiService {
   private apiBaseUrl: string;
-  private currentProvider: string = 'DeepSeek';
+  private currentProvider: string = 'GLM-4.5-Air';
 
   constructor() {
     // For development, always use current origin
@@ -20,14 +20,19 @@ class SecureAiService {
     }
   }
 
-  async generateConceptAnalysis(concept: string): Promise<Analysis> {
+  async generateConceptAnalysis(concept: string, provider?: string): Promise<Analysis> {
     try {
+      const payload: Record<string, unknown> = { concept: concept.trim() };
+      if (provider) {
+        payload.provider = provider;
+      }
+
       const response = await fetch(`${this.apiBaseUrl}/api/analyze`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ concept: concept.trim() }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -50,7 +55,7 @@ class SecureAiService {
     } catch (error) {
       console.error('Error calling secure AI service:', error);
       throw new Error(
-        "Failed to generate concept analysis. The service may be unavailable or the input might be invalid."
+        'Failed to generate concept analysis. The service may be unavailable or the input might be invalid.'
       );
     }
   }
@@ -66,8 +71,8 @@ class SecureAiService {
 
 // Export singleton instance
 const secureAiService = new SecureAiService();
-export const generateConceptAnalysis = (concept: string): Promise<Analysis> => {
-  return secureAiService.generateConceptAnalysis(concept);
+export const generateConceptAnalysis = (concept: string, provider?: string): Promise<Analysis> => {
+  return secureAiService.generateConceptAnalysis(concept, provider);
 };
 
 export const activeProviderName = secureAiService.getProviderName.bind(secureAiService);

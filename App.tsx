@@ -1,12 +1,13 @@
 import React, { useState, useCallback, useRef, useEffect, lazy, Suspense } from 'react';
 import { generateConceptAnalysis } from './services/secureAiService';
-import type { Analysis, ShareableState } from './types';
+import { PROVIDER_DISPLAY_NAMES, type Analysis, type ShareableState } from './types';
 import Header from './components/Header';
 import ConceptInput from './components/ConceptInput';
 import EnhancedLoader from './components/EnhancedLoader';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import { useHistory } from './hooks/useHistory';
 import { useLanguage } from './contexts/LanguageContext';
+import { useProvider } from './contexts/ProviderContext';
 import { translations } from './locales';
 import { encodeState, decodeState } from './utils/share';
 import { createErrorInfo, validateConcept, getValidationErrorMessage } from './utils/errorHandling';
@@ -35,6 +36,7 @@ const App: React.FC = () => {
   const [errorInfo, setErrorInfo] = useState<ReturnType<typeof createErrorInfo> | null>(null);
   const { language } = useLanguage();
   const { history, addHistoryItem } = useHistory();
+  const { selectedProvider } = useProvider();
   const analysisRef = useRef<HTMLDivElement>(null);
   const analysisAbortControllerRef = useRef<AbortController | null>(null);
 
@@ -156,7 +158,7 @@ const App: React.FC = () => {
     setLoadingStage('analyzing');
 
     // Start API call immediately when entering analyzing stage
-    const analysisPromise = generateConceptAnalysis(trimmedConcept);
+    const analysisPromise = generateConceptAnalysis(trimmedConcept, selectedProvider ?? undefined);
 
     try {
       const result = await analysisPromise;
@@ -179,7 +181,8 @@ const App: React.FC = () => {
       }
 
       console.error(err);
-      const errorInfo = createErrorInfo(err instanceof Error ? err : new Error('Analysis failed'), 'ai_service');
+      const providerNameForError = selectedProvider ? PROVIDER_DISPLAY_NAMES[selectedProvider] : undefined;
+      const errorInfo = createErrorInfo(err instanceof Error ? err : new Error('Analysis failed'), providerNameForError);
       setErrorInfo(errorInfo);
       setError(errorInfo.userFriendly);
     } finally {
@@ -188,7 +191,7 @@ const App: React.FC = () => {
         setLoadingStage('analyzing');
       }
     }
-  }, [language, addHistoryItem, isLoading]);
+  }, [language, addHistoryItem, isLoading, selectedProvider, normalizeToBilingualAnalysis]);
 
   const handleRetry = useCallback(() => {
     if (concept) {

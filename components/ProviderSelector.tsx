@@ -1,12 +1,7 @@
 import React from 'react';
 import { useProvider } from '../contexts/ProviderContext';
 import type { Provider } from '../types';
-
-const PROVIDER_NAMES: Record<Provider, string> = {
-    gemini: 'Gemini',
-    openai: 'OpenAI',
-    deepseek: 'DeepSeek'
-}
+import { PROVIDER_DISPLAY_NAMES } from '../types';
 
 const ProviderSelector: React.FC = () => {
   const { selectedProvider, setSelectedProvider, availableProviders } = useProvider();
@@ -25,12 +20,12 @@ const ProviderSelector: React.FC = () => {
   return (
     <div className="flex space-x-1 bg-slate-800 p-1 rounded-lg">
       {availableProviders.map((provider) => (
-        <button 
-            key={provider}
-            onClick={() => setSelectedProvider(provider)} 
-            className={buttonClasses(provider)}
+        <button
+          key={provider}
+          onClick={() => setSelectedProvider(provider)}
+          className={buttonClasses(provider)}
         >
-            {PROVIDER_NAMES[provider]}
+          {PROVIDER_DISPLAY_NAMES[provider]}
         </button>
       ))}
     </div>

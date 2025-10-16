@@ -11,6 +11,15 @@ const corsHeaders = {
 
 // Cache the prompt to avoid recreating it on every request
 let cachedPrompt: string | null = null;
+const DEFAULT_GLM_BASE_URL = 'https://open.bigmodel.cn/api/paas/v4/';
+
+type ProviderKey = 'glm45' | 'deepseek';
+
+interface ProviderCandidate {
+  key: ProviderKey;
+  displayName: string;
+  executor: () => Promise<any>;
+}
 
 function getBilingualPrompt(): string {
   if (cachedPrompt) return cachedPrompt;
@@ -28,15 +37,15 @@ interface Analysis { why: Section; how: Section; what: WhatSection; }
 
 Here is the framework to follow for generating the content of the JSON fields:
 
-🎯 **Why (The Why):**
+?? **Why (The Why):**
 - **Goal:** Explain why this concept exists.
 - **Action:** Clarify the fundamental problem or core tension it was created to solve. Provide a solid "cognitive anchor" for its necessity.
 
-💡 **How (The How):**
+?? **How (The How):**
 - **Goal:** Create an intuitive, sensory understanding.
 - **Action:** Design a very simple, vivid analogy or micro-scenario. Strip away all jargon. Use everyday experiences to make the concept's operation instantly "felt."
 
-🔧 **What (The What):**
+?? **What (The What):**
 - **Goal:** Systematically deconstruct the concept.
 - **Action:** Break it down into a mini mental model with three parts:
   - **A. Core Components:** What are its most critical constituent parts?
@@ -50,25 +59,85 @@ export const onRequestOptions = () => new Response(null, { status: 204, headers:
 
 export const onRequestPost = async ({ request, env }: { request: Request; env: Record<string, string> }) => {
   try {
-    const { concept } = await request.json().catch(() => ({}));
+    const { concept, provider } = await request.json().catch(() => ({}));
     if (!concept || typeof concept !== 'string' || concept.trim().length === 0) {
       return new Response(JSON.stringify({ error: { message: 'Concept is required and must be a non-empty string.' } }), { status: 400, headers: corsHeaders });
     }
 
-    let providerName = 'Unknown';
-    let aiResponse;
+    const sanitizedConcept = concept.trim();
+    const normalizedProvider = typeof provider === 'string' ? provider.toLowerCase() : null;
 
-    // For now, only use DeepSeek as specified
-    if (env.DEEPSEEK_API_KEY) {
-      providerName = 'DeepSeek';
-      aiResponse = await callDeepSeek(concept.trim(), env.DEEPSEEK_API_KEY);
-    } else {
+    const glmApiKey = env.GLM_API_KEY || env.GLM_45_AIR_API_KEY;
+    const glmBaseUrl = env.GLM_BASE_URL || env.GLM_45_AIR_BASE_URL || DEFAULT_GLM_BASE_URL;
+    const deepseekApiKey = env.DEEPSEEK_API_KEY;
+
+    const providerCandidates: ProviderCandidate[] = [];
+    const addCandidate = (candidate: ProviderCandidate) => {
+      if (!providerCandidates.some(({ key }) => key === candidate.key)) {
+        providerCandidates.push(candidate);
+      }
+    };
+
+    if (normalizedProvider === 'glm45' && glmApiKey) {
+      addCandidate({
+        key: 'glm45',
+        displayName: 'GLM-4.5-Air',
+        executor: () => callGLM(sanitizedConcept, glmApiKey, glmBaseUrl),
+      });
+    }
+
+    if (normalizedProvider === 'deepseek' && deepseekApiKey) {
+      addCandidate({
+        key: 'deepseek',
+        displayName: 'DeepSeek',
+        executor: () => callDeepSeek(sanitizedConcept, deepseekApiKey),
+      });
+    }
+
+    if (glmApiKey) {
+      addCandidate({
+        key: 'glm45',
+        displayName: 'GLM-4.5-Air',
+        executor: () => callGLM(sanitizedConcept, glmApiKey, glmBaseUrl),
+      });
+    }
+
+    if (deepseekApiKey) {
+      addCandidate({
+        key: 'deepseek',
+        displayName: 'DeepSeek',
+        executor: () => callDeepSeek(sanitizedConcept, deepseekApiKey),
+      });
+    }
+
+    if (providerCandidates.length === 0) {
       return new Response(JSON.stringify({
-        error: { message: 'DeepSeek API key not configured. Please set DEEPSEEK_API_KEY in your environment variables.' }
+        error: { message: 'No AI provider configured. Please set GLM_API_KEY or DEEPSEEK_API_KEY in your environment variables.' }
       }), { status: 500, headers: corsHeaders });
     }
 
-    // Add provider info to response
+    let providerName = 'Unknown';
+    let aiResponse: any;
+    let lastError: Error | null = null;
+
+    for (const candidate of providerCandidates) {
+      try {
+        aiResponse = await candidate.executor();
+        providerName = candidate.displayName;
+        break;
+      } catch (providerError) {
+        const normalizedError = providerError instanceof Error ? providerError : new Error(String(providerError));
+        console.error(`[${candidate.displayName}] Provider error:`, normalizedError);
+        lastError = normalizedError;
+      }
+    }
+
+    if (!aiResponse) {
+      return new Response(JSON.stringify({
+        error: { message: lastError?.message || 'All AI providers failed. Please check your configuration.' }
+      }), { status: 500, headers: corsHeaders });
+    }
+
     const responseWithProvider = { ...aiResponse, provider: providerName };
     return new Response(JSON.stringify(responseWithProvider), { status: 200, headers: corsHeaders });
 
@@ -79,6 +148,72 @@ export const onRequestPost = async ({ request, env }: { request: Request; env: R
     }), { status: 500, headers: corsHeaders });
   }
 };
+
+async function callGLM(concept: string, apiKey: string, baseUrl: string = DEFAULT_GLM_BASE_URL) {
+  console.log(`[GLM-4.5-Air] Starting analysis for concept: "${concept}"`);
+
+  const systemPrompt = getBilingualPrompt();
+  console.log(`[GLM-4.5-Air] Prompt length: ${systemPrompt.length} characters`);
+
+  const requestBody = {
+    model: 'glm-4.5-air',
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: `Generate the analysis for the concept: "${concept}"` },
+    ],
+    temperature: 0.7,
+    response_format: { type: 'json_object' },
+    max_tokens: 4000,
+    stream: false,
+  };
+
+  const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+  const endpoint = new URL('chat/completions', normalizedBaseUrl).toString();
+
+  console.log(`[GLM-4.5-Air] Sending request to GLM API...`);
+  const startTime = Date.now();
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  const responseTime = Date.now() - startTime;
+  console.log(`[GLM-4.5-Air] API response received in ${responseTime}ms, status: ${response.status}`);
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: { message: 'Could not parse error response.' } }));
+    console.error(`[GLM-4.5-Air] API Error:`, errorData);
+    throw new Error(`GLM-4.5-Air API Error: ${response.status} ${response.statusText} - ${errorData.error?.message || 'Unknown API error'}`);
+  }
+
+  const responseData = await response.json();
+  console.log(`[GLM-4.5-Air] Response structure:`, {
+    choices: responseData.choices?.length || 0,
+    usage: responseData.usage,
+  });
+
+  const jsonText = responseData.choices?.[0]?.message?.content?.trim();
+  if (!jsonText) {
+    throw new Error('Empty response from GLM-4.5-Air API');
+  }
+
+  console.log(`[GLM-4.5-Air] Response text length: ${jsonText.length} characters`);
+
+  try {
+    const result = JSON.parse(jsonText);
+    console.log(`[GLM-4.5-Air] Successfully parsed JSON response`);
+    return result;
+  } catch (parseError) {
+    console.error(`[GLM-4.5-Air] JSON parse error:`, parseError);
+    console.error(`[GLM-4.5-Air] Raw response:`, jsonText);
+    throw new Error('Invalid JSON response from GLM-4.5-Air API');
+  }
+}
 
 async function callDeepSeek(concept: string, apiKey: string) {
   console.log(`[DeepSeek] Starting analysis for concept: "${concept}"`);
@@ -142,5 +277,3 @@ async function callDeepSeek(concept: string, apiKey: string) {
     throw new Error('Invalid JSON response from DeepSeek API');
   }
 }
-
-

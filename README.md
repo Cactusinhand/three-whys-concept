@@ -1,9 +1,9 @@
 <details>
 <summary><strong>code is cheap, show me your prompt</strong> 📝</summary>
 
-- 作者:   [李继刚](https://x.com/lijigang_com)
-- 版本:   1.0
-- 日期:   2025-10-10
+- 作者： [李继刚](https://x.com/lijigang_com)
+- 版本： 1.0
+- 日期： 2025-10-10
 - purpose: 遵循 Why-How-What 框架，对任意概念进行结构化、多层次的深度解析。
 
 概念三问
@@ -40,12 +40,12 @@ A React + TypeScript application that performs deep concept analysis using the "
 
 ## 🎯 Features
 
-- **AI-Powered Analysis**: Generates detailed concept analyses using multiple AI providers (Gemini, OpenAI, DeepSeek) with intelligent fallback
+- **AI-Powered Analysis**: Generates detailed concept analyses using multiple AI providers (GLM-4.5-Air, DeepSeek, Gemini, OpenAI) with intelligent fallback
 - **Why-How-What Framework**: Systematic three-step analysis for deep understanding
 - **Bilingual Support**: Full English/Chinese translation with seamless toggle functionality
 - **Export Options**: Download analyses as images or share via URL
 - **Responsive Design**: Works perfectly on desktop and mobile devices
-- **Smart Provider Selection**: Automatically selects the best available AI provider with built-in fallback mechanism
+- **Smart Provider Selection**: Instantly toggle between GLM-4.5-Air and DeepSeek with automatic fallback when a provider is unavailable
 
 ## 🚀 Quick Start
 
@@ -74,16 +74,13 @@ A React + TypeScript application that performs deep concept analysis using the "
    Create a `.env.local` file in the root directory:
 
    ```bash
-   # Priority order: Gemini > OpenAI > DeepSeek
-
-   # Option 1: Google Gemini (highest priority)
-   GEMINI_API_KEY=your_gemini_api_key_here
-
-   # Option 2: OpenAI (fallback)
-   OPENAI_API_KEY=your_openai_api_key_here
-
-   # Option 3: DeepSeek (final fallback)
+   # Core providers handled by the secure backend
+   GLM_API_KEY=your_glm_api_key_here
    DEEPSEEK_API_KEY=your_deepseek_api_key_here
+
+   # Optional additional fallbacks
+   OPENAI_API_KEY=your_openai_api_key_here
+   GEMINI_API_KEY=your_gemini_api_key_here
    ```
 
 4. Run the development server
@@ -130,7 +127,7 @@ Each generated analysis follows the proven "Why-How-What" framework:
 
 - **Frontend**: React 19 + TypeScript + Vite
 - **Styling**: Tailwind CSS
-- **AI Integration**: Multiple providers with intelligent fallback (Google Gemini, OpenAI, DeepSeek)
+- **AI Integration**: Multiple providers with intelligent fallback (GLM-4.5-Air, DeepSeek, Google Gemini, OpenAI)
 - **Export**: html2canvas for image generation
 - **Sharing**: URL-based sharing with compression (pako)
 - **Deployment**: Cloudflare Pages ready
@@ -157,18 +154,21 @@ Each generated analysis follows the proven "Why-How-What" framework:
    Add your API keys in Cloudflare Pages dashboard:
 
    ```
-   GEMINI_API_KEY=your_actual_api_key_here
-   OPENAI_API_KEY=your_actual_api_key_here
-   DEEPSEEK_API_KEY=your_actual_api_key_here
+   GLM_API_KEY=your_actual_glm_api_key_here
+   DEEPSEEK_API_KEY=your_actual_deepseek_api_key_here
+   # Optional extras
+   OPENAI_API_KEY=your_actual_openai_api_key_here
+   GEMINI_API_KEY=your_actual_gemini_api_key_here
    ```
 
 ### Environment Variables
 
 | Variable | Description | Required |
-| ------------------ | --------------------- | ------------------------ |
-| `GEMINI_API_KEY` | Google Gemini API key | ✅ (or one of the others) |
-| `OPENAI_API_KEY` | OpenAI API key | ✅ (or one of the others) |
-| `DEEPSEEK_API_KEY` | DeepSeek API key | ✅ (or one of the others) |
+| --- | --- | --- |
+| `GLM_API_KEY` | Zhipu GLM-4.5-Air API key | Primary (recommended) |
+| `DEEPSEEK_API_KEY` | DeepSeek API key | Secondary (recommended) |
+| `OPENAI_API_KEY` | OpenAI API key | Optional fallback |
+| `GEMINI_API_KEY` | Google Gemini API key | Optional fallback |
 
 ## 🤝 Contributing
 

@@ -14,23 +14,26 @@ const ProviderContext = createContext<ProviderContextType | undefined>(undefined
 
 export const ProviderProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const availableProviders = useMemo((): Provider[] => {
-    const providers: Provider[] = [];
-    if (import.meta.env.VITE_GEMINI_API_KEY) providers.push('gemini');
-    if (import.meta.env.VITE_OPENAI_API_KEY) providers.push('openai');
-    if (import.meta.env.VITE_DEEPSEEK_API_KEY) providers.push('deepseek');
-    return providers;
+    const configured: Provider[] = [];
+    if (import.meta.env.VITE_GLM_API_KEY) configured.push('glm45');
+    if (import.meta.env.VITE_DEEPSEEK_API_KEY) configured.push('deepseek');
+    if (import.meta.env.VITE_GEMINI_API_KEY) configured.push('gemini');
+    if (import.meta.env.VITE_OPENAI_API_KEY) configured.push('openai');
+
+    if (configured.length > 0) {
+      return configured;
+    }
+
+    // Default to server-managed providers when keys are stored securely
+    return ['glm45', 'deepseek'];
   }, []);
 
   const initialProvider = useMemo((): Provider | null => {
-    // For production, always use DeepSeek regardless of other API keys
-    // This prevents trying multiple providers and causing performance issues
-    if (import.meta.env.VITE_DEEPSEEK_API_KEY) return 'deepseek';
-
-    // Fallback to other providers only if DeepSeek is not available
-    if (import.meta.env.VITE_GEMINI_API_KEY) return 'gemini';
-    if (import.meta.env.VITE_OPENAI_API_KEY) return 'openai';
+    if (availableProviders.includes('glm45')) return 'glm45';
+    if (availableProviders.includes('deepseek')) return 'deepseek';
+    if (availableProviders.length > 0) return availableProviders[0];
     return null;
-  }, []);
+  }, [availableProviders]);
 
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(initialProvider);
 

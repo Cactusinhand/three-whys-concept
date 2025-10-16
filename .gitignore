@@ -27,3 +27,4 @@ dist-ssr
 CLAUDE.md
 tmpnpm-cache/
 .wrangler/
+.dev.vars
