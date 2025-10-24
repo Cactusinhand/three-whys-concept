@@ -28,3 +28,4 @@ CLAUDE.md
 tmpnpm-cache/
 .wrangler/
 .dev.vars
+.serena/
