@@ -19,9 +19,9 @@ const Footer: React.FC = () => {
     <footer className="w-full max-w-4xl text-center text-slate-500 text-sm py-4 mt-8">
       <p>Powered by AI. Structured analysis for any concept.</p>
       <div className="flex justify-center items-center gap-x-2 sm:gap-x-4 mt-2">
-        <a 
-          href="https://github.com/Cactusinhand/three-whys-concept" 
-          target="_blank" 
+        <a
+          href="https://github.com/Cactusinhand/three-whys-concept"
+          target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-x-2 px-3 py-1 rounded-md transition-colors duration-200 hover:bg-slate-800 hover:text-slate-300"
         >
@@ -31,15 +31,45 @@ const Footer: React.FC = () => {
         <span className="text-slate-700">•</span>
         <div className="flex items-center gap-x-2">
             <span>Prompt by</span>
-            <a 
-              href="https://x.com/lijigang_com" 
-              target="_blank" 
+            <a
+              href="https://x.com/lijigang_com"
+              target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-x-2 px-3 py-1 rounded-md transition-colors duration-200 hover:bg-slate-800 hover:text-slate-300"
             >
               <XIcon />
               <span>李继刚</span>
             </a>
+        </div>
+      </div>
+
+      <div className="mt-6 pt-4 border-t border-slate-700">
+        <h3 className="text-slate-400 text-base font-medium mb-3">Other Tools</h3>
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-y-2 gap-x-4">
+          <a
+            href="https://thinker.githubcard.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-2 rounded-md transition-colors duration-200 hover:text-emerald-400 text-slate-300"
+          >
+            Roundtable Thinkers
+          </a>
+          <a
+            href="https://word.githubcard.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-2 rounded-md transition-colors duration-200 hover:text-cyan-400 text-slate-300"
+          >
+            Wittgenstein's Word Game
+          </a>
+          <a
+            href="https://prompt.githubcard.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-2 rounded-md transition-colors duration-200 hover:text-purple-400 text-slate-300"
+          >
+            AI Progressive Requirement Refiner
+          </a>
         </div>
       </div>
     </footer>
